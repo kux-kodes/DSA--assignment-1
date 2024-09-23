@@ -166,3 +166,33 @@ function placeOrder(string userId) returns error? {
         io:println("Error placing order: ", response);
     }
 }
+/ Main function
+public function main() returns error? {
+    // Example: List available products
+    error? listAvailableProductsResult = listAvailableProducts();
+    if listAvailableProductsResult is error {
+        // Handle error
+    }
+
+    // Example: Search for a product with a fixed SKU value
+    string sku = "sku001"; // Use an existing SKU from your product list
+    error? searchProductResult = searchProduct(sku);
+    if searchProductResult is error {
+        io:println("Failed to search for product: ", searchProductResult);
+    }
+
+    // Example: Add a new product
+    error? addProductResult = addProduct({ 
+        id: "4", 
+        name: "Smartwatch", 
+        description: "Fitness smartwatch", 
+        price: 199.99, 
+        stock_quantity: 30, 
+        sku: "sku004", 
+        status: "Available" 
+    });
+    if addProductResult is error {
+        // Handle error
+    }
+
+    // Example: Update an existing product
