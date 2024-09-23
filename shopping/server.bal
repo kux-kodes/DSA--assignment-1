@@ -1,419 +1,183 @@
-import ballerina/grpc;
-import ballerina/protobuf;
+import ballerina/http;
 
-public const string CHATGPT_DESC = "0A0D636861746770742E70726F746F120F6F6E6C696E655F73686F7070696E6722A6010A0750726F6475637412120A046E616D6518012001280952046E616D6512200A0B6465736372697074696F6E180220012809520B6465736372697074696F6E12140A0570726963651803200128015205707269636512250A0E73746F636B5F7175616E74697479180420012805520D73746F636B5175616E7469747912100A03736B751805200128095203736B7512160A06737461747573180620012809520673746174757322440A0E50726F647563745265717565737412320A0770726F6475637418012001280B32182E6F6E6C696E655F73686F7070696E672E50726F64756374520770726F64756374225F0A0F50726F64756374526573706F6E736512180A076D65737361676518012001280952076D65737361676512320A0770726F6475637418022001280B32182E6F6E6C696E655F73686F7070696E672E50726F64756374520770726F64756374221D0A0950726F64756374496412100A03736B751801200128095203736B7522430A0B50726F647563744C69737412340A0870726F647563747318012003280B32182E6F6E6C696E655F73686F7070696E672E50726F64756374520870726F647563747322330A045573657212170A07757365725F6964180120012809520675736572496412120A04726F6C651802200128095204726F6C6522380A0B557365725265717565737412290A047573657218012001280B32152E6F6E6C696E655F73686F7070696E672E5573657252047573657222280A0C55736572526573706F6E736512180A076D65737361676518012001280952076D65737361676522380A0B436172745265717565737412170A07757365725F6964180120012809520675736572496412100A03736B751802200128095203736B7522280A0C43617274526573706F6E736512180A076D65737361676518012001280952076D65737361676522210A0655736572496412170A07757365725F69641801200128095206757365724964226E0A0D4F72646572526573706F6E736512180A076D65737361676518012001280952076D65737361676512430A106F7264657265645F70726F647563747318022003280B32182E6F6E6C696E655F73686F7070696E672E50726F64756374520F6F72646572656450726F647563747322070A05456D70747932FE040A0F53686F7070696E6753657276696365124F0A0A41646450726F64756374121F2E6F6E6C696E655F73686F7070696E672E50726F64756374526571756573741A202E6F6E6C696E655F73686F7070696E672E50726F64756374526573706F6E7365124C0A0B4372656174655573657273121C2E6F6E6C696E655F73686F7070696E672E55736572526571756573741A1D2E6F6E6C696E655F73686F7070696E672E55736572526573706F6E7365280112520A0D55706461746550726F64756374121F2E6F6E6C696E655F73686F7070696E672E50726F64756374526571756573741A202E6F6E6C696E655F73686F7070696E672E50726F64756374526573706F6E736512490A0D52656D6F766550726F64756374121A2E6F6E6C696E655F73686F7070696E672E50726F6475637449641A1C2E6F6E6C696E655F73686F7070696E672E50726F647563744C697374124D0A154C697374417661696C61626C6550726F647563747312162E6F6E6C696E655F73686F7070696E672E456D7074791A1C2E6F6E6C696E655F73686F7070696E672E50726F647563744C697374124D0A0D53656172636850726F64756374121A2E6F6E6C696E655F73686F7070696E672E50726F6475637449641A202E6F6E6C696E655F73686F7070696E672E50726F64756374526573706F6E736512480A09416464546F43617274121C2E6F6E6C696E655F73686F7070696E672E43617274526571756573741A1D2E6F6E6C696E655F73686F7070696E672E43617274526573706F6E736512450A0A506C6163654F7264657212172E6F6E6C696E655F73686F7070696E672E5573657249641A1E2E6F6E6C696E655F73686F7070696E672E4F72646572526573706F6E7365620670726F746F33";
+type Product record {
+    string id;
+    string name;
+    string description;
+    float price;
+    int stock_quantity;
+    string sku;
+    string status;
+};
 
-public isolated client class ShoppingServiceClient {
-    *grpc:AbstractClientEndpoint;
+type ProductResponse record {
+    string message;
+    Product product;
+};
 
-    private final grpc:Client grpcClient;
+type ProductID record {
+    string id;
+};
 
-    public isolated function init(string url, *grpc:ClientConfiguration config) returns grpc:Error? {
-        self.grpcClient = check new (url, config);
-        check self.grpcClient.initStub(self, CHATGPT_DESC);
+type ProductListResponse record {
+    Product[] products;
+};
+
+type ProductSKU record {
+    string sku;
+};
+
+type User record {
+    string id;
+    string name;
+    string email;
+    string role;
+};
+
+type UserID record {
+    string user_id;
+};
+
+type AddToCartRequest record {
+    string user_id;
+    string product_sku;
+};
+
+type CartResponse record {
+    string message;
+};
+
+type OrderResponse record {
+    string order_id;
+    Product[] ordered_products;
+    string message;
+};
+
+type UserCart record {
+    string product_sku;
+    int quantity;
+};
+
+// Simulated in-memory product storage with initial products
+map<Product> products = {
+    "sku001": { id: "1", name: "Laptop", description: "High performance laptop", price: 999.99, stock_quantity: 10, sku: "sku001", status: "Available" },
+    "sku002": { id: "2", name: "Smartphone", description: "Latest model smartphone", price: 499.99, stock_quantity: 15, sku: "sku002", status: "Available" },
+    "sku003": { id: "3", name: "Tablet", description: "Portable tablet", price: 299.99, stock_quantity: 20, sku: "sku003", status: "Available" }
+};
+
+map<User> users = {};
+map<UserCart[]> userCarts = {}; // Maps user_id to an array of UserCart
+
+service /shopping on new http:Listener(8080) {
+
+    resource function post AddProduct(Product product) returns ProductResponse {
+        products[product.sku] = product;
+        return { message: "Product added successfully", product: product };
     }
 
-    isolated remote function AddProduct(ProductRequest|ContextProductRequest req) returns ProductResponse|grpc:Error {
-        map<string|string[]> headers = {};
-        ProductRequest message;
-        if req is ContextProductRequest {
-            message = req.content;
-            headers = req.headers;
-        } else {
-            message = req;
+    resource function put UpdateProduct(Product product) returns ProductResponse {
+        products[product.sku] = product;
+        return { message: "Product updated successfully", product: product };
+    }
+
+    resource function delete RemoveProduct(ProductID productId) returns ProductListResponse {
+        _ = products.remove(productId.id);
+        
+        Product[] updatedProductList = [];
+        foreach string key in products.keys() {
+            updatedProductList.push(<Product>products[key]);
         }
-        var payload = check self.grpcClient->executeSimpleRPC("online_shopping.ShoppingService/AddProduct", message, headers);
-        [anydata, map<string|string[]>] [result, _] = payload;
-        return <ProductResponse>result;
+        
+        return { products: updatedProductList };
     }
 
-    isolated remote function AddProductContext(ProductRequest|ContextProductRequest req) returns ContextProductResponse|grpc:Error {
-        map<string|string[]> headers = {};
-        ProductRequest message;
-        if req is ContextProductRequest {
-            message = req.content;
-            headers = req.headers;
-        } else {
-            message = req;
+    resource function get ListAvailableProducts() returns ProductListResponse {
+        Product[] availableProducts = [];
+        foreach string key in products.keys() {
+            Product p = <Product>products[key];
+            if (p.status == "Available") {
+                availableProducts.push(p);
+            }
         }
-        var payload = check self.grpcClient->executeSimpleRPC("online_shopping.ShoppingService/AddProduct", message, headers);
-        [anydata, map<string|string[]>] [result, respHeaders] = payload;
-        return {content: <ProductResponse>result, headers: respHeaders};
+        return { products: availableProducts };
     }
 
-    isolated remote function UpdateProduct(ProductRequest|ContextProductRequest req) returns ProductResponse|grpc:Error {
-        map<string|string[]> headers = {};
-        ProductRequest message;
-        if req is ContextProductRequest {
-            message = req.content;
-            headers = req.headers;
+    resource function post SearchProduct(ProductSKU productSKU) returns ProductResponse {
+        Product? product = products[productSKU.sku];
+        if (product is Product) {
+            return { message: "Product found", product: product };
         } else {
-            message = req;
+            return { message: "Product not found", product: { id: "", name: "", description: "", price: 0.0, stock_quantity: 0, sku: "", status: "" } };
         }
-        var payload = check self.grpcClient->executeSimpleRPC("online_shopping.ShoppingService/UpdateProduct", message, headers);
-        [anydata, map<string|string[]>] [result, _] = payload;
-        return <ProductResponse>result;
     }
 
-    isolated remote function UpdateProductContext(ProductRequest|ContextProductRequest req) returns ContextProductResponse|grpc:Error {
-        map<string|string[]> headers = {};
-        ProductRequest message;
-        if req is ContextProductRequest {
-            message = req.content;
-            headers = req.headers;
-        } else {
-            message = req;
+    resource function post CreateUsers(User[] newUsers) returns string {
+        foreach User user in newUsers {
+            users[user.id] = user;
         }
-        var payload = check self.grpcClient->executeSimpleRPC("online_shopping.ShoppingService/UpdateProduct", message, headers);
-        [anydata, map<string|string[]>] [result, respHeaders] = payload;
-        return {content: <ProductResponse>result, headers: respHeaders};
+        return "Users created successfully";
     }
 
-    isolated remote function RemoveProduct(ProductId|ContextProductId req) returns ProductList|grpc:Error {
-        map<string|string[]> headers = {};
-        ProductId message;
-        if req is ContextProductId {
-            message = req.content;
-            headers = req.headers;
-        } else {
-            message = req;
-        }
-        var payload = check self.grpcClient->executeSimpleRPC("online_shopping.ShoppingService/RemoveProduct", message, headers);
-        [anydata, map<string|string[]>] [result, _] = payload;
-        return <ProductList>result;
+   resource function post AddToCart(AddToCartRequest request) returns CartResponse {
+    string userId = request.user_id;
+    string productSku = request.product_sku;
+
+    // Initialize the user's cart if it doesn't exist
+    if (!userCarts.hasKey(userId)) {
+        userCarts[userId] = [];
     }
 
-    isolated remote function RemoveProductContext(ProductId|ContextProductId req) returns ContextProductList|grpc:Error {
-        map<string|string[]> headers = {};
-        ProductId message;
-        if req is ContextProductId {
-            message = req.content;
-            headers = req.headers;
-        } else {
-            message = req;
+    // Safely get the user's cart, ensuring it's not null
+    UserCart[] cart = <UserCart[]>userCarts[userId];
+
+    boolean productExists = false;
+
+    // Iterate over the cart to check for the product
+    foreach UserCart item in cart {
+        if (item.product_sku == productSku) {
+            item.quantity += 1; // Increment quantity
+            productExists = true;
+            break;
         }
-        var payload = check self.grpcClient->executeSimpleRPC("online_shopping.ShoppingService/RemoveProduct", message, headers);
-        [anydata, map<string|string[]>] [result, respHeaders] = payload;
-        return {content: <ProductList>result, headers: respHeaders};
     }
 
-    isolated remote function ListAvailableProducts(Empty|ContextEmpty req) returns ProductList|grpc:Error {
-        map<string|string[]> headers = {};
-        Empty message;
-        if req is ContextEmpty {
-            message = req.content;
-            headers = req.headers;
-        } else {
-            message = req;
-        }
-        var payload = check self.grpcClient->executeSimpleRPC("online_shopping.ShoppingService/ListAvailableProducts", message, headers);
-        [anydata, map<string|string[]>] [result, _] = payload;
-        return <ProductList>result;
+    // If the product is not in the cart, add it
+    if (!productExists) {
+        cart.push({ product_sku: productSku, quantity: 1 });
     }
 
-    isolated remote function ListAvailableProductsContext(Empty|ContextEmpty req) returns ContextProductList|grpc:Error {
-        map<string|string[]> headers = {};
-        Empty message;
-        if req is ContextEmpty {
-            message = req.content;
-            headers = req.headers;
-        } else {
-            message = req;
-        }
-        var payload = check self.grpcClient->executeSimpleRPC("online_shopping.ShoppingService/ListAvailableProducts", message, headers);
-        [anydata, map<string|string[]>] [result, respHeaders] = payload;
-        return {content: <ProductList>result, headers: respHeaders};
-    }
+    // Update the user's cart
+    userCarts[userId] = cart; // Ensure to assign back the updated cart
 
-    isolated remote function SearchProduct(ProductId|ContextProductId req) returns ProductResponse|grpc:Error {
-        map<string|string[]> headers = {};
-        ProductId message;
-        if req is ContextProductId {
-            message = req.content;
-            headers = req.headers;
-        } else {
-            message = req;
-        }
-        var payload = check self.grpcClient->executeSimpleRPC("online_shopping.ShoppingService/SearchProduct", message, headers);
-        [anydata, map<string|string[]>] [result, _] = payload;
-        return <ProductResponse>result;
-    }
-
-    isolated remote function SearchProductContext(ProductId|ContextProductId req) returns ContextProductResponse|grpc:Error {
-        map<string|string[]> headers = {};
-        ProductId message;
-        if req is ContextProductId {
-            message = req.content;
-            headers = req.headers;
-        } else {
-            message = req;
-        }
-        var payload = check self.grpcClient->executeSimpleRPC("online_shopping.ShoppingService/SearchProduct", message, headers);
-        [anydata, map<string|string[]>] [result, respHeaders] = payload;
-        return {content: <ProductResponse>result, headers: respHeaders};
-    }
-
-    isolated remote function AddToCart(CartRequest|ContextCartRequest req) returns CartResponse|grpc:Error {
-        map<string|string[]> headers = {};
-        CartRequest message;
-        if req is ContextCartRequest {
-            message = req.content;
-            headers = req.headers;
-        } else {
-            message = req;
-        }
-        var payload = check self.grpcClient->executeSimpleRPC("online_shopping.ShoppingService/AddToCart", message, headers);
-        [anydata, map<string|string[]>] [result, _] = payload;
-        return <CartResponse>result;
-    }
-
-    isolated remote function AddToCartContext(CartRequest|ContextCartRequest req) returns ContextCartResponse|grpc:Error {
-        map<string|string[]> headers = {};
-        CartRequest message;
-        if req is ContextCartRequest {
-            message = req.content;
-            headers = req.headers;
-        } else {
-            message = req;
-        }
-        var payload = check self.grpcClient->executeSimpleRPC("online_shopping.ShoppingService/AddToCart", message, headers);
-        [anydata, map<string|string[]>] [result, respHeaders] = payload;
-        return {content: <CartResponse>result, headers: respHeaders};
-    }
-
-isolated remote function PlaceOrder(UserId|ContextUserId req) returns OrderResponse|grpc:Error {
-        map<string|string[]> headers = {};
-        UserId message;
-        if req is ContextUserId {
-            message = req.content;
-            headers = req.headers;
-        } else {
-            message = req;
-        }
-        var payload = check self.grpcClient->executeSimpleRPC("online_shopping.ShoppingService/PlaceOrder", message, headers);
-        [anydata, map<string|string[]>] [result, _] = payload;
-        return <OrderResponse>result;
-    }
-
-    isolated remote function PlaceOrderContext(UserId|ContextUserId req) returns ContextOrderResponse|grpc:Error {
-        map<string|string[]> headers = {};
-        UserId message;
-        if req is ContextUserId {
-            message = req.content;
-            headers = req.headers;
-        } else {
-            message = req;
-        }
-        var payload = check self.grpcClient->executeSimpleRPC("online_shopping.ShoppingService/PlaceOrder", message, headers);
-        [anydata, map<string|string[]>] [result, respHeaders] = payload;
-        return {content: <OrderResponse>result, headers: respHeaders};
-    }
-
-    isolated remote function CreateUsers() returns CreateUsersStreamingClient|grpc:Error {
-        grpc:StreamingClient sClient = check self.grpcClient->executeClientStreaming("online_shopping.ShoppingService/CreateUsers");
-        return new CreateUsersStreamingClient(sClient);
-    }
+    return { message: "Product added to cart successfully" };
 }
 
-public client class CreateUsersStreamingClient {
-    private grpc:StreamingClient sClient;
-
-    isolated function init(grpc:StreamingClient sClient) {
-        self.sClient = sClient;
+    resource function post PlaceOrder(UserID userId) returns OrderResponse {
+    if (!userCarts.hasKey(userId.user_id)) {
+        return { order_id: "", ordered_products: [], message: "No products in cart" };
     }
 
-    isolated remote function sendUserRequest(UserRequest message) returns grpc:Error? {
-        return self.sClient->send(message);
-    }
+    // Safely get the user's cart
+    UserCart[]? cart = userCarts[userId.user_id];
 
-    isolated remote function sendContextUserRequest(ContextUserRequest message) returns grpc:Error? {
-        return self.sClient->send(message);
-    }
+    // Initialize an empty array for ordered products
+    Product[] orderedProducts = [];
 
-    isolated remote function receiveUserResponse() returns UserResponse|grpc:Error? {
-        var response = check self.sClient->receive();
-        if response is () {
-            return response;
-        } else {
-            [anydata, map<string|string[]>] [payload, _] = response;
-            return <UserResponse>payload;
-        }
-    }
-isolated remote function receiveContextUserResponse() returns ContextUserResponse|grpc:Error? {
-        var response = check self.sClient->receive();
-        if response is () {
-            return response;
-        } else {
-            [anydata, map<string|string[]>] [payload, headers] = response;
-            return {content: <UserResponse>payload, headers: headers};
+    // Check if cart is not null
+    if (cart is UserCart[]) {
+        foreach UserCart item in cart {
+            Product? product = products[item.product_sku];
+            if (product is Product && product.stock_quantity >= item.quantity) {
+                orderedProducts.push(product);
+                product.stock_quantity -= item.quantity; // Decrement stock
+            }
         }
     }
 
-    isolated remote function sendError(grpc:Error response) returns grpc:Error? {
-        return self.sClient->sendError(response);
-    }
+    // Clear the user's cart after placing the order
+    _ = userCarts.remove(userId.user_id);
 
-    isolated remote function complete() returns grpc:Error? {
-        return self.sClient->complete();
-    }
+    return { order_id: "ORD" + userId.user_id, ordered_products: orderedProducts, message: "Order placed successfully" };
 }
 
-public client class ShoppingServiceOrderResponseCaller {
-    private grpc:Caller caller;
-
-    public isolated function init(grpc:Caller caller) {
-        self.caller = caller;
-    }
-
-    public isolated function getId() returns int {
-        return self.caller.getId();
-    }
-
-    isolated remote function sendOrderResponse(OrderResponse response) returns grpc:Error? {
-        return self.caller->send(response);
-    }
-
-    isolated remote function sendContextOrderResponse(ContextOrderResponse response) returns grpc:Error? {
-        return self.caller->send(response);
-    }
-
-    isolated remote function sendError(grpc:Error response) returns grpc:Error? {
-        return self.caller->sendError(response);
-    }
-
-    isolated remote function complete() returns grpc:Error? {
-        return self.caller->complete();
-    }
-
-    public isolated function isCancelled() returns boolean {
-        return self.caller.isCancelled();
-    }
-}
-
-public client class ShoppingServiceProductListCaller {
-    private grpc:Caller caller;
-
-    public isolated function init(grpc:Caller caller) {
-        self.caller = caller;
-    }
-
-    public isolated function getId() returns int {
-        return self.caller.getId();
-    }
-
-    isolated remote function sendProductList(ProductList response) returns grpc:Error? {
-        return self.caller->send(response);
-    }
-
-    isolated remote function sendContextProductList(ContextProductList response) returns grpc:Error? {
-        return self.caller->send(response);
-    }
-
-    isolated remote function sendError(grpc:Error response) returns grpc:Error? {
-        return self.caller->sendError(response);
-    }
-
-    isolated remote function complete() returns grpc:Error? {
-        return self.caller->complete();
-    }
-
-    public isolated function isCancelled() returns boolean {
-        return self.caller.isCancelled();
-    }
-}
-
-public client class ShoppingServiceProductResponseCaller {
-    private grpc:Caller caller;
-
-    public isolated function init(grpc:Caller caller) {
-        self.caller = caller;
-    }
-
-    public isolated function getId() returns int {
-        return self.caller.getId();
-    }
-
-    isolated remote function sendProductResponse(ProductResponse response) returns grpc:Error? {
-        return self.caller->send(response);
-    }
-
-    isolated remote function sendContextProductResponse(ContextProductResponse response) returns grpc:Error? {
-        return self.caller->send(response);
-    }
-
-    isolated remote function sendError(grpc:Error response) returns grpc:Error? {
-        return self.caller->sendError(response);
-    }
-
-    isolated remote function complete() returns grpc:Error? {
-        return self.caller->complete();
-    }
-
-    public isolated function isCancelled() returns boolean {
-        return self.caller.isCancelled();
-    }
-}
-
-public client class ShoppingServiceCartResponseCaller {
-    private grpc:Caller caller;
-
-    public isolated function init(grpc:Caller caller) {
-        self.caller = caller;
-    }
-
-    public isolated function getId() returns int {
-        return self.caller.getId();
-    }
-
-    isolated remote function sendCartResponse(CartResponse response) returns grpc:Error? {
-        return self.caller->send(response);
-    }
-
-    isolated remote function sendContextCartResponse(ContextCartResponse response) returns grpc:Error? {
-        return self.caller->send(response);
-    }
-
-    isolated remote function sendError(grpc:Error response) returns grpc:Error? {
-        return self.caller->sendError(response);
-    }
-
-    isolated remote function complete() returns grpc:Error? {
-        return self.caller->complete();
-    }
-
-    public isolated function isCancelled() returns boolean {
-        return self.caller.isCancelled();
-    }
-}
-
-public client class ShoppingServiceUserResponseCaller {
-    private grpc:Caller caller;
-
-    public isolated function init(grpc:Caller caller) {
-        self.caller = caller;
-    }
-
-    public isolated function getId() returns int {
-        return self.caller.getId();
-    }
-
-    isolated remote function sendUserResponse(UserResponse response) returns grpc:Error? {
-        return self.caller->send(response);
-    }
-
-    isolated remote function sendContextUserResponse(ContextUserResponse response) returns grpc:Error? {
-        return self.caller->send(response);
-    }
-
-    isolated remote function sendError(grpc:Error response) returns grpc:Error? {
-        return self.caller->sendError(response);
-    }
-
-    isolated remote function complete() returns grpc:Error? {
-        return self.caller->complete();
-    }
-
-    public isolated function isCancelled() returns boolean {
-        return self.caller.isCancelled();
-    }
 }
