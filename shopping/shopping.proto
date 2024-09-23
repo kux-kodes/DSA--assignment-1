@@ -1,0 +1,103 @@
+
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+package shopping;
+
+service ShoppingService {
+  // Admin operations
+  rpc AddProduct(Product) returns (ProductResponse);
+  rpc UpdateProduct(Product) returns (ProductResponse);
+  rpc RemoveProduct(ProductID) returns (ProductListResponse);
+  rpc CreateUsers(stream User) returns (CreateUsersResponse);
+
+  // Customer operations
+  rpc ListAvailableProducts(Empty) returns (ProductListResponse);
+  rpc SearchProduct(ProductSKU) returns (ProductResponse);
+  rpc AddToCart(AddToCartRequest) returns (CartResponse);
+  rpc PlaceOrder(UserID) returns (OrderResponse);
+}
+
+// Product message for adding or updating a product
+message Product {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  float price = 4;
+  int32 stock_quantity = 5;
+  string sku = 6;
+  string status = 7; // Available or Out of Stock
+}
+
+// Response for adding, updating, or searching a product
+message ProductResponse {
+  string message = 1;
+  Product product = 2;
+}
+
+// Request to remove a product by its ID
+message ProductID {
+  string id = 1;
+}
+
+// Response for listing all products
+message ProductListResponse {
+  repeated Product products = 1;
+}
+
+// Request to search for a product by its SKU
+message ProductSKU {
+  string sku = 1;
+}
+
+// User message for creating users (customers or admins)
+message User {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string role = 4; // Customer or Admin
+}
+
+// Response for user creation operation
+message CreateUsersResponse {
+  string message = 1;
+}
+
+// Request to add a product to a customer's cart
+message AddToCartRequest {
+  string user_id = 1;
+  string product_sku = 2;
+}
+
+// Response after adding a product to a cart
+message CartResponse {
+  string message = 1;
+  Cart cart = 2;
+}
+
+// Cart message to hold items for a customer
+message Cart {
+  string user_id = 1;
+  repeated CartItem items = 2;
+}
+
+// Cart item message for products in a cart
+message CartItem {
+  string product_sku = 1;
+  int32 quantity = 2;
+}
+
+// Request to place an order
+message UserID {
+  string user_id = 1;
+}
+
+// Response for placing an order
+message OrderResponse {
+  string order_id = 1;
+  repeated Product ordered_products = 2;
+  string message = 3;
+}
+
+// Empty message for simple requests
+message Empty {}
