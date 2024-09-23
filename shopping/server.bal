@@ -181,3 +181,62 @@ public isolated client class ShoppingServiceClient {
         return {content: <CartResponse>result, headers: respHeaders};
     }
 
+isolated remote function PlaceOrder(UserId|ContextUserId req) returns OrderResponse|grpc:Error {
+        map<string|string[]> headers = {};
+        UserId message;
+        if req is ContextUserId {
+            message = req.content;
+            headers = req.headers;
+        } else {
+            message = req;
+        }
+        var payload = check self.grpcClient->executeSimpleRPC("online_shopping.ShoppingService/PlaceOrder", message, headers);
+        [anydata, map<string|string[]>] [result, _] = payload;
+        return <OrderResponse>result;
+    }
+
+    isolated remote function PlaceOrderContext(UserId|ContextUserId req) returns ContextOrderResponse|grpc:Error {
+        map<string|string[]> headers = {};
+        UserId message;
+        if req is ContextUserId {
+            message = req.content;
+            headers = req.headers;
+        } else {
+            message = req;
+        }
+        var payload = check self.grpcClient->executeSimpleRPC("online_shopping.ShoppingService/PlaceOrder", message, headers);
+        [anydata, map<string|string[]>] [result, respHeaders] = payload;
+        return {content: <OrderResponse>result, headers: respHeaders};
+    }
+
+    isolated remote function CreateUsers() returns CreateUsersStreamingClient|grpc:Error {
+        grpc:StreamingClient sClient = check self.grpcClient->executeClientStreaming("online_shopping.ShoppingService/CreateUsers");
+        return new CreateUsersStreamingClient(sClient);
+    }
+}
+
+public client class CreateUsersStreamingClient {
+    private grpc:StreamingClient sClient;
+
+    isolated function init(grpc:StreamingClient sClient) {
+        self.sClient = sClient;
+    }
+
+    isolated remote function sendUserRequest(UserRequest message) returns grpc:Error? {
+        return self.sClient->send(message);
+    }
+
+    isolated remote function sendContextUserRequest(ContextUserRequest message) returns grpc:Error? {
+        return self.sClient->send(message);
+    }
+
+    isolated remote function receiveUserResponse() returns UserResponse|grpc:Error? {
+        var response = check self.sClient->receive();
+        if response is () {
+            return response;
+        } else {
+            [anydata, map<string|string[]>] [payload, _] = response;
+            return <UserResponse>payload;
+        }
+    }
+
