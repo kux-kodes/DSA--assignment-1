@@ -49,59 +49,68 @@ public function getAllProgrammes() returns error? {
         io:println("Error retrieving programmes: ", response.detail());
     }
 }
-resource isolated function post programmes(Programmes_body payload) returns http:Response|error {
-        string resourcePath = string `/programmes`;
-        http:Request request = new;
-        json jsonBody = payload.toJson();
-        request.setPayload(jsonBody, "application/json");
-        http:Response response = check self.clientEp->post(resourcePath, request);
-        return response;
+// Function to retrieve a specific programme by code
+public function getProgramme(string programmeCode) returns error? {
+    http:Response|error response = clientEP->get("/" + programmeCode);
+    if (response is http:Response) {
+        json programme = check response.getJsonPayload();
+        io:println("Programme Details: ", programme);
+    } else {
+        io:println("Error retrieving programme: ", response.detail());
     }
-    # Retrieve the details of a specific programme
-    #
-    # + return - Programme details 
-    resource isolated function get programmes/[string programmeCode]() returns Programmes_body|error {
-        string resourcePath = string `/programmes/${getEncodedUri(programmeCode)}`;
-        Programmes_body response = check self.clientEp->get(resourcePath);
-        return response;
-    }
-    # Update an existing programme
-    #
-    # + payload - Updated programme details
-    # + return - Programme successfully updated 
-    resource isolated function put programmes/[string programmeCode](Programmes_programmeCode_body payload) returns http:Response|error {
-        string resourcePath = string `/programmes/${getEncodedUri(programmeCode)}`;
-        http:Request request = new;
-        json jsonBody = payload.toJson();
-        request.setPayload(jsonBody, "application/json");
-        http:Response response = check self.clientEp->put(resourcePath, request);
-        return response;
-    }
-    # Delete a programme's record
-    #
-    # + return - Programme successfully deleted 
-    resource isolated function delete programmes/[string programmeCode]() returns http:Response|error {
-        string resourcePath = string `/programmes/${getEncodedUri(programmeCode)}`;
-        http:Response response = check self.clientEp-> delete(resourcePath);
-        return response;
-    }
-    # Retrieve all programmes due for review
-    #
-    # + return - A list of programmes due for review 
-    resource isolated function get programmes\-review() returns Programmes_body[]|error {
-        string resourcePath = string `/programmes-review`;
-        Programmes_body[] response = check self.clientEp->get(resourcePath);
-        return response;
-    }
-    # Retrieve all programmes that belong to a specific faculty
-    #
-    # + return - A list of programmes in the specified faculty 
-    resource isolated function get programmes/faculty/[string facultyName]() returns Programmes_body[]|error {
-        string resourcePath = string `/programmes/faculty/${getEncodedUri(facultyName)}`;
-        Programmes_body[] response = check self.clientEp->get(resourcePath);
-        return response;
-    }
-    # Retrieve all courses
-    #
-    # + return - A list of courses 
+}
 
+// Function to update an existing programme
+public function updateProgramme(Programme programme) returns error? {
+    json updatedProgramme = {
+        programmeCode: programme.programmeCode,
+        title: programme.title,
+        nqfLevel: programme.nqfLevel,
+        faculty: programme.faculty,
+        department: programme.department,
+        registrationDate: programme.registrationDate
+    };
+
+    http:Response|error response = clientEP->put("/" + programme.programmeCode, updatedProgramme);
+    if (response is http:Response) {
+        io:println("Programme updated: ", response.getTextPayload());
+    } else {
+        io:println("Error updating programme: ", response.detail());
+    }
+}
+
+// Function to delete a programme
+public function deleteProgramme(string programmeCode) returns error? {
+    http:Response|error response = clientEP->delete("/" + programmeCode);
+    if (response is http:Response) {
+        io:println("Programme deleted: ", response.getTextPayload());
+    } else {
+        io:println("Error deleting programme: ", response.detail());
+    }
+}
+
+// Main function to test the client
+public function main() returns error? {
+    // Example Programme
+    Programme newProgramme = {
+        programmeCode: "08BCMS",
+        title: "Engineering Fundamentals",
+        nqfLevel: 6,
+        faculty: "Engineering",
+        department: "Civil Engineering",
+        registrationDate: "2024-01-01"
+    };
+
+    // Call the API functions
+    check addProgramme(newProgramme);
+    check getAllProgrammes();
+    check getProgramme("08BCMS");
+
+    // Update example
+    newProgramme.title = "Advanced Engineering";
+    newProgramme.nqfLevel = 7;
+    check updateProgramme(newProgramme);
+    
+    // Delete example
+    check deleteProgramme("08BCMS");
+}
