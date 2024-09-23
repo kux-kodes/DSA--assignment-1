@@ -1,0 +1,141 @@
+openapi: 3.0.0
+info:
+  title: Programme Management API
+  version: 1.0.0
+paths:
+  /programmes:
+    post:
+      summary: Add a new programme
+      operationId: addProgramme
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Programme'
+      responses:
+        '201':
+          description: Programme successfully added
+        '409':
+          description: Programme already exists
+        '400':
+          description: Invalid JSON payload
+    get:
+      summary: Retrieve all programmes
+      operationId: getAllProgrammes
+      responses:
+        '200':
+          description: A list of all programmes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Programme'
+        '404':
+          description: No programmes found
+  /programmes/{programmeCode}:
+    get:
+      summary: Retrieve a specific programme
+      operationId: getProgramme
+      parameters:
+        - name: programmeCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Programme details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Programme'
+        '404':
+          description: Programme not found
+    put:
+      summary: Update an existing programme
+      operationId: updateProgramme
+      parameters:
+        - name: programmeCode
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Programme'
+      responses:
+        '200':
+          description: Programme updated successfully
+        '404':
+          description: Programme not found
+  /programmes/byProgrammeCode/{programmeCode}:
+    delete:
+      summary: Delete a programme
+      operationId: deleteProgramme
+      parameters:
+        - name: programmeCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Programme deleted successfully
+        '404':
+          description: Programme not found
+  /programmes/faculty/{faculty}:
+    get:
+      summary: Retrieve all programmes by faculty
+      operationId: getProgrammesByFaculty
+      parameters:
+        - name: faculty
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of all programmes in the specified faculty
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Programme'
+        '404':
+          description: No programmes found
+  /programmes/programmesDueForReview:
+    get:
+      summary: Retrieve all programmes due for review
+      operationId: getProgrammesDueForReview
+      responses:
+        '200':
+          description: A list of all programmes due for review
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Programme'
+        '404':
+          description: No programmes due for review
+components:
+  schemas:
+    Programme:
+      type: object
+      properties:
+        code:
+          type: string
+        title:
+          type: string
+        NQFLevel:
+          type: integer
+        faculty:
+          type: string
+        year:
+          type: integer
