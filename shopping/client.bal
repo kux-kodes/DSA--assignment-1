@@ -166,7 +166,7 @@ function placeOrder(string userId) returns error? {
         io:println("Error placing order: ", response);
     }
 }
-/ Main function
+// Main function
 public function main() returns error? {
     // Example: List available products
     error? listAvailableProductsResult = listAvailableProducts();
