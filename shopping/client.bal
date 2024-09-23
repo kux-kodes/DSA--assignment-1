@@ -196,3 +196,44 @@ public function main() returns error? {
     }
 
     // Example: Update an existing product
+    error? updateProductResult = updateProduct({ 
+        id: "1", 
+        name: "Laptop", 
+        description: "Updated high performance laptop", 
+        price: 899.99, 
+        stock_quantity: 5, 
+        sku: "sku001", 
+        status: "Available" 
+    });
+    if updateProductResult is error {
+        // Handle error
+    }
+
+    // Example: Remove a product
+    error? removeProductResult = removeProduct("sku002");
+    if removeProductResult is error {
+        // Handle error
+    }
+
+    // Example: Create multiple users
+    User[] newUsers = [
+        { id: "user1", name: "Alice", email: "alice@example.com", role: "Customer" },
+        { id: "user2", name: "Bob", email: "bob@example.com", role: "Admin" }
+    ];
+    error? createUserResult = createUsers(newUsers);
+    if createUserResult is error {
+        // Handle error
+    }
+
+    // Example: Add to cart
+    error? addToCartResult = addToCart("user1", "sku004");
+    if addToCartResult is error {
+        // Handle error
+    }
+
+    // Example: Place an order
+    error? placeOrderResult = placeOrder("user1");
+    if placeOrderResult is error {
+        // Handle error
+    }
+}
