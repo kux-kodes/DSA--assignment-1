@@ -66,5 +66,41 @@ service /programmes on new http:Listener(8080) {
             check caller->respond(res);
         }
     }
+   // PUT method to update an existing programme
+    resource function put updateProgrammes/[string programmeCode](http:Caller caller, http:Request req) returns error? {
+    json|error jsonPayload = req.getJsonPayload();
+
+    if (jsonPayload is error) {
+        http:Response res = new;
+        res.statusCode = 400; // Bad Request
+        res.setPayload("Invalid JSON payload");
+        check caller->respond(res);
+        return;
+    }
+
+    Programme updatedProgramme = check jsonPayload.cloneWithType(Programme);
+
+    // Check if the programme with the given code exists in the table
+    Programme? existingProgramme = programmes[programmeCode];
+
+    if (existingProgramme is Programme) {
+        // Use the `put` method to update the programme in the table
+        check programmes.put(updatedProgramme);
+
+        http:Response res = new;
+        res.statusCode = 200; // OK
+        res.setPayload("Programme updated successfully.");
+        check caller->respond(res);
+
+    } else {
+        // If the programme does not exist, respond with a 404 error
+        http:Response res = new;
+        res.statusCode = 404; // Not Found
+        res.setPayload("Programme with code " + programmeCode + " not found.");
+        check caller->respond(res);
+    }
+}
+
+
 
 
