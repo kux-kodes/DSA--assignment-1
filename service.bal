@@ -100,6 +100,95 @@ service /programmes on new http:Listener(8080) {
         check caller->respond(res);
     }
 }
+ // Retrieve the details of a specific programme
+    resource function get [string programmeCode](http:Caller caller, http:Request req) returns error? {
+        Programme[] results = from var p in programmes
+                              where p.code == programmeCode
+                              select p;
+        if (results.length() == 0) {
+            http:Response res = new;
+            res.statusCode = 404; // Not Found
+            res.setPayload("Programme: " + programmeCode + " not found");
+            check caller->respond(res);
+        } else {
+            json programmeJson = programmeToJson(results[0]);
+            http:Response res = new;
+            res.setPayload(programmeJson);
+            check caller->respond(res);
+        }
+    }
+
+    
+    resource function delete byProgrammeCode/[string programmeCode](http:Caller caller, http:Request req) returns error? {
+        Programme? removedProgramme = programmes.remove(programmeCode);
+        if (removedProgramme is ()) {
+            http:Response res = new;
+            res.statusCode = 404; // Not Found
+            res.setPayload("Programme: " + programmeCode + " not found");
+            check caller->respond(res);
+        } else {
+            http:Response res = new;
+            res.statusCode = 204; // No Content
+            check caller->respond(res);
+        }
+    }
+
+   s
+resource function get allProgrammes(http:Caller caller, http:Request req) returns error? {
+    Programme[] allProgrammes = from var p in programmes
+                                select p;
+    if (allProgrammes.length() == 0) {
+        http:Response res = new;
+        res.statusCode = 404; // Not Found
+        res.setPayload("No programmes found");
+        check caller->respond(res);
+    } else {
+        json programmesJson = allProgrammes.map(programmeToJson);
+        http:Response res = new;
+        res.setPayload(programmesJson);
+        check caller->respond(res);
+    }
+}
+
+
+   
+    resource function get faculty/[string faculty](http:Caller caller) returns error? {
+        Programme[] programmesInFaculty = from Programme programme in programmes
+                                          where programme.faculty == faculty
+                                          select programme;
+
+        if (programmesInFaculty.length() == 0) {
+            http:Response res = new;
+            res.statusCode = 404; // Not Found
+            res.setPayload("No programmes found for faculty: " + faculty);
+            check caller->respond(res);
+        } else {
+            json facultyProgrammesJson = programmesInFaculty.map(programmeToJson);
+            http:Response res = new;
+            res.setPayload(facultyProgrammesJson);
+            check caller->respond(res);
+        }
+    }
+
+ 
+    resource function get programmesDueForReview(http:Caller caller, http:Request req) returns error? {
+        Programme[] dueForReviewProgrammes = from Programme p in programmes
+                                             where isDueForReview(p)
+                                             select p;
+
+        if (dueForReviewProgrammes.length() == 0) {
+            http:Response res = new;
+            res.statusCode = 404; // Not Found
+            res.setPayload("No programmes due for review");
+            check caller->respond(res);
+        } else {
+            json dueForReviewJson = dueForReviewProgrammes.map(programmeToJson);
+            http:Response res = new;
+            res.setPayload(dueForReviewJson);
+            check caller->respond(res);
+        }
+    }
+}
 
 
 
